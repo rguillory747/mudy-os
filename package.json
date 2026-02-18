@@ -34,7 +34,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "@uploadthing/react": "^7.1.0",
+    "@uploadthing/react": "^6.6.0",
     "@upstash/ratelimit": "^0.4.3",
     "@upstash/redis": "^1.22.0",
     "ai": "^4.0.0",
@@ -68,7 +68,7 @@
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.6",
     "typescript": "^5.6.0",
-    "uploadthing": "^7.4.0",
+    "uploadthing": "^6.13.0",
     "zod": "^3.21.4",
     "zustand": "^4.3.9"
   },
