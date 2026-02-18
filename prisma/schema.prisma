@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum OnboardingStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum PlanTier {
+  free
+  starter
+  pro
+  enterprise
+}
+
+enum ModelProvider {
+  openai
+  anthropic
+  runpod
+  openrouter
+}
+
+enum TaskStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum Role {
+  user
+  system
+}
+
+model Category {
+  id         String      @id @default(uuid())
+  name       String
+  companions Companion[]
+}
+
+model Companion {
+  id          String   @id @default(uuid())
+  userId      String
+  userName    String
+  src         String
+  name        String   @db.Text
+  description String
+  instructions String  @db.Text
+  seed        String   @db.Text
+  orgId       String?  // Optional for backward compatibility
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String
+
+  messages    Message[]
+  org         Organization? @relation(fields: [orgId], references: [id])
+
+  @@index([categoryId])
+  @@index([orgId])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  role        Role
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companionId String
+  userId      String
+
+  companion Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@index([companionId])
+}
+
+model UserSubscription {
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
+  stripePriceId          String?   @map(name: "stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
+}
+
+model Organization {
+  id                String           @id @default(cuid())
+  clerkOrgId        String           @unique
+  name              String
+  slug              String           @unique
+  logoUrl           String?
+  onboardingStatus  OnboardingStatus @default(pending)
+  industry          String?
+  companySize       String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  orgRoles          OrgRole[]
+  orgSubscription   OrgSubscription?
+  modelConfigs      ModelConfig[]
+  companions        Companion[]
+  agentTasks        AgentTask[]
+  tokenUsage        TokenUsage[]
+}
+
+model OrgSubscription {
+  id                     String    @id @default(cuid())
+  orgId                  String    @unique
+  plan                   PlanTier  @default(free)
+  stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
+  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
+  stripePriceId          String?   @map(name: "stripe_price_id")
+  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
+  maxRoles               Int       @default(3)
+  computeBudgetCents     Int       @default(0)
+  tokenQuotaMonthly      Int       @default(0)
+  currentTokenUsage      Int       @default(0)
+  quotaResetDate         DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+}
+
+model OrgRole {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  persona     String?  @db.Text
+  instructions String? @db.Text
+  parentId    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org              Organization @relation(fields: [orgId], references: [id])
+  parent           OrgRole?     @relation("OrgRoleHierarchy", fields: [parentId], references: [id])
+  children         OrgRole[]    @relation("OrgRoleHierarchy")
+  modelAssignment  RoleModelAssignment?
+  agentTasks       AgentTask[]
+  tokenUsage       TokenUsage[]
+
+  @@index([orgId])
+}
+
+model ModelConfig {
+  id            String        @id @default(cuid())
+  orgId         String?       // null = global config
+  provider      ModelProvider
+  modelId       String
+  displayName   String
+  costPer1kTokens Float?
+  maxTokens     Int?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  org             Organization?      @relation(fields: [orgId], references: [id])
+  roleAssignments RoleModelAssignment[]
+  tokenUsage      TokenUsage[]
+
+  @@unique([orgId, modelId])
+}
+
+model RoleModelAssignment {
+  id            String   @id @default(cuid())
+  roleId        String   @unique
+  modelConfigId String
+  createdAt     DateTime @default(now())
+
+  role       OrgRole     @relation(fields: [roleId], references: [id])
+  modelConfig ModelConfig @relation(fields: [modelConfigId], references: [id])
+}
+
+model TokenUsage {
+  id              String        @id @default(cuid())
+  orgId           String
+  roleId          String?
+  modelConfigId   String?
+  modelProvider   ModelProvider
+  modelId         String
+  inputTokens     Int           @default(0)
+  outputTokens    Int           @default(0)
+  totalTokens     Int           @default(0)
+  costCents       Int           @default(0)
+  createdAt       DateTime      @default(now())
+
+  org          Organization @relation(fields: [orgId], references: [id])
+  role         OrgRole?     @relation(fields: [roleId], references: [id])
+  modelConfig  ModelConfig? @relation(fields: [modelConfigId], references: [id])
+
+  @@index([orgId])
+  @@index([roleId])
+  @@index([createdAt])
+}
+
+model AgentTask {
+  id             String     @id @default(cuid())
+  orgId          String
+  roleId         String?
+  title          String
+  input          String     @db.Text
+  output         String?    @db.Text
+  status         TaskStatus @default(pending)
+  executionTimeMs Int?
+  tokenCount     Int?
+  costCents      Int?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  org  Organization @relation(fields: [orgId], references: [id])
+  role OrgRole?     @relation(fields: [roleId], references: [id])
+
+  @@index([orgId])
+  @@index([roleId])
+}

@@ -1,0 +1,19 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+      serverActions: true,
+  },
+  images: {
+      domains: [
+          "res.cloudinary.com",
+          "picsum.photos",
+          "uploadthing.com",
+          "utfs.io",
+          "img.clerk.com",
+          "subdomain",
+          "files.stripe.com",
+      ],
+  },
+}
+
+module.exports = nextConfig

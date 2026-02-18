@@ -1,0 +1,14 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@database-url",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk-publishable-key",
+    "CLERK_SECRET_KEY": "@clerk-secret-key",
+    "OPENROUTER_API_KEY": "@openrouter-api-key",
+    "STRIPE_API_KEY": "@stripe-api-key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe-webhook-secret"
+  }
+}
