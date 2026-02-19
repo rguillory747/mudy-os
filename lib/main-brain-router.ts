@@ -1,5 +1,6 @@
 import { prismadb } from './prismadb'
-import { ModelRouter, ChatMessage } from './model-router'
+import { ModelRouter } from './model-router'
+import type { ChatMessage } from './openrouter-client'
 import { createModelClient } from './openrouter-client'
 
 interface DelegationDecision {
