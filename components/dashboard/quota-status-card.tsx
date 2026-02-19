@@ -124,7 +124,7 @@ export function QuotaStatusCard() {
         {status.percentageUsed >= 80 && !status.isExceeded && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
             <p className="text-sm text-yellow-700">
-              You're approaching your monthly limit.
+              You&apos;re approaching your monthly limit.
             </p>
           </div>
         )}
