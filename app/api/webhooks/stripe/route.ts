@@ -112,12 +112,13 @@ export async function POST(req: Request) {
           })
 
           if (orgSubscription) {
-            // Reset token usage at the start of new billing period
+            const sub = await stripe.subscriptions.retrieve(invoice.subscription as string)
+            // Reset token usage at the start of new billing period using actual period end
             await prismadb.orgSubscription.update({
               where: { id: orgSubscription.id },
               data: {
                 currentTokenUsage: 0,
-                quotaResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+                quotaResetDate: new Date(sub.current_period_end * 1000)
               }
             })
           }
