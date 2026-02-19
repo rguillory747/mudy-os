@@ -7,7 +7,8 @@ import { stripe } from "@/lib/stripe"
 
 export async function POST(req: Request) {
   const body = await req.text()
-  const signature = headers().get("Stripe-Signature") as string
+  const headersList = await headers()
+  const signature = headersList.get("Stripe-Signature") as string
 
   let event: Stripe.Event
 
@@ -46,8 +47,9 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object as Stripe.Invoice
     const subscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
+      invoice.subscription as string
     )
 
     await prismadb.userSubscription.update({

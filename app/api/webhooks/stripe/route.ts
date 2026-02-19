@@ -34,27 +34,30 @@ export async function POST(req: Request) {
             return new NextResponse('Missing metadata', { status: 400 })
           }
 
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string)
+          const periodEnd = new Date(sub.current_period_end * 1000)
+
           await prismadb.orgSubscription.upsert({
             where: { orgId },
             create: {
               orgId,
               plan: tier,
               stripeCustomerId: session.customer as string,
-              stripeSubscriptionId: session.subscription as string,
-              stripePriceId: session.metadata.stripePriceId,
-              stripeCurrentPeriodEnd: new Date((session as any).current_period_end * 1000),
+              stripeSubscriptionId: sub.id,
+              stripePriceId: sub.items.data[0]?.price.id || null,
+              stripeCurrentPeriodEnd: periodEnd,
               tokenQuotaMonthly: getTokenQuotaForTier(tier),
               currentTokenUsage: 0,
-              quotaResetDate: new Date((session as any).current_period_end * 1000)
+              quotaResetDate: periodEnd
             },
             update: {
               plan: tier,
               stripeCustomerId: session.customer as string,
-              stripeSubscriptionId: session.subscription as string,
-              stripePriceId: session.metadata.stripePriceId,
-              stripeCurrentPeriodEnd: new Date((session as any).current_period_end * 1000),
+              stripeSubscriptionId: sub.id,
+              stripePriceId: sub.items.data[0]?.price.id || null,
+              stripeCurrentPeriodEnd: periodEnd,
               tokenQuotaMonthly: getTokenQuotaForTier(tier),
-              quotaResetDate: new Date((session as any).current_period_end * 1000)
+              quotaResetDate: periodEnd
             }
           })
         }
