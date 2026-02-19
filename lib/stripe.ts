@@ -1,11 +1,40 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-  typescript: true,
+let stripeInstance: Stripe | null = null;
+
+function initializeStripe(): Stripe {
+  if (stripeInstance) return stripeInstance;
+
+  const apiKey = process.env.STRIPE_API_KEY;
+  if (!apiKey) {
+    throw new Error('STRIPE_API_KEY environment variable is not defined');
+  }
+
+  stripeInstance = new Stripe(apiKey, {
+    apiVersion: "2025-02-24.acacia",
+    typescript: true,
+  });
+
+  return stripeInstance;
+}
+
+// Lazy-loaded Stripe instance via Proxy
+export const stripe = new Proxy({} as Stripe, {
+  get: (target, prop: string | symbol) => {
+    const instance = initializeStripe();
+    return Reflect.get(instance, prop);
+  },
 });
 
-export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+export function getStripeWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not defined');
+  }
+  return secret;
+}
+
+export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
 
 export async function createCheckoutSession({
   orgId,
