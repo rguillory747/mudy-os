@@ -21,9 +21,19 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate')
     const roleId = searchParams.get('roleId')
 
+    const parsedStart = startDate ? new Date(startDate) : undefined
+    const parsedEnd = endDate ? new Date(endDate) : undefined
+
+    if (parsedStart && isNaN(parsedStart.getTime())) {
+      return new NextResponse('Invalid startDate', { status: 400 })
+    }
+    if (parsedEnd && isNaN(parsedEnd.getTime())) {
+      return new NextResponse('Invalid endDate', { status: 400 })
+    }
+
     const analytics = await ModelRouter.getUsageAnalytics(org.id, {
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      startDate: parsedStart,
+      endDate: parsedEnd,
       roleId: roleId || undefined
     })
 

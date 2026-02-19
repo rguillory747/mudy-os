@@ -42,19 +42,19 @@ export async function POST(
       return new NextResponse('Task not found', { status: 404 })
     }
 
-    if (task.status === 'running') {
-      return new NextResponse('Task is already running', { status: 400 })
-    }
-
     if (!task.roleId) {
       return new NextResponse('Task has no assigned role', { status: 400 })
     }
 
-    // Mark task as running
-    await prismadb.agentTask.update({
-      where: { id: taskId },
+    // Atomically claim the task - prevents race condition on concurrent requests
+    const claimed = await prismadb.agentTask.updateMany({
+      where: { id: taskId, status: { not: 'running' } },
       data: { status: 'running' }
     })
+
+    if (claimed.count === 0) {
+      return new NextResponse('Task is already running', { status: 400 })
+    }
 
     const startTime = Date.now()
 
@@ -129,9 +129,6 @@ export async function POST(
     }
   } catch (error: any) {
     console.error('Task execution error:', error)
-    return new NextResponse(
-      error.message || 'Task execution failed',
-      { status: 500 }
-    )
+    return new NextResponse('Task execution failed', { status: 500 })
   }
 }

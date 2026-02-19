@@ -21,8 +21,7 @@ const OrgRoleUpdateSchema = z.object({
 })
 
 export async function GET(
-  request: Request,
-  { params }: { params: { orgId: string } }
+  request: Request
 ) {
   try {
     const user = await currentUser()
@@ -30,7 +29,7 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const org = await requireOrg(params.orgId, user.id)
+    const org = await requireOrg()
     if (!org) {
       return new NextResponse("Forbidden", { status: 403 })
     }
@@ -40,7 +39,7 @@ export async function GET(
         orgId: org.id
       },
       include: {
-        modelAssignments: {
+        modelAssignment: {
           include: {
             modelConfig: true
           }
@@ -59,8 +58,7 @@ export async function GET(
 }
 
 export async function POST(
-  request: Request,
-  { params }: { params: { orgId: string } }
+  request: Request
 ) {
   try {
     const user = await currentUser()
@@ -68,7 +66,7 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const org = await requireOrg(params.orgId, user.id)
+    const org = await requireOrg()
     if (!org) {
       return new NextResponse("Forbidden", { status: 403 })
     }
@@ -87,9 +85,12 @@ export async function POST(
       where: { orgId: org.id }
     })
 
-    // Note: In a real implementation, you'd check the org's subscription plan
-    // For now, we'll assume a reasonable limit or skip this check
-    const maxRoles = org.subscription?.maxRoles || 100
+    // Get subscription to check role limit
+    const subscription = await prismadb.orgSubscription.findUnique({
+      where: { orgId: org.id }
+    })
+
+    const maxRoles = subscription?.maxRoles || 100
     if (roleCount >= maxRoles) {
       return new NextResponse("Role limit exceeded", { status: 400 })
     }
@@ -119,8 +120,7 @@ export async function POST(
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { orgId: string } }
+  request: Request
 ) {
   try {
     const user = await currentUser()
@@ -128,13 +128,23 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const org = await requireOrg(params.orgId, user.id)
+    const org = await requireOrg()
     if (!org) {
       return new NextResponse("Forbidden", { status: 403 })
     }
 
     const body = await request.json()
     const { updates } = OrgRoleUpdateSchema.parse(body)
+
+    // Verify all roles belong to this org
+    const roleIds = updates.map(u => u.id)
+    const ownedRoles = await prismadb.orgRole.findMany({
+      where: { id: { in: roleIds }, orgId: org.id },
+      select: { id: true }
+    })
+    if (ownedRoles.length !== roleIds.length) {
+      return new NextResponse('One or more roles not found', { status: 404 })
+    }
 
     await prismadb.$transaction(
       updates.map(update => 

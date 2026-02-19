@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     const user = await currentUser();
     const { src, name, description, instructions, seed, categoryId } = body;
 
-    console.log(user, user?.id, user?.firstName)
     if (!user || !user.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -25,8 +24,6 @@ export async function POST(req: Request) {
     if (!isPro) {
       return new NextResponse("Pro subscription required", { status: 403 });
     }
-
-    console.log({ categoryId })
 
     const org = await getCurrentOrg();
     const companion = await prismadb.companion.create({

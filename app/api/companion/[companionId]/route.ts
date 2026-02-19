@@ -19,7 +19,7 @@ export async function PATCH(
       return new NextResponse("Companion ID required", { status: 400 });
     }
 
-    if (!user || !user.id || !user.firstName) {
+    if (!user || !user.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

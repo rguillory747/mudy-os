@@ -29,7 +29,7 @@ export async function PATCH(
       return new NextResponse("Role ID is required", { status: 400 })
     }
 
-    const org = await requireOrg(user.id)
+    const org = await requireOrg()
     
     // Validate that the role belongs to this org
     const existingRole = await prismadb.orgRole.findUnique({
@@ -57,6 +57,12 @@ export async function PATCH(
     return NextResponse.json(updatedRole)
   } catch (error) {
     console.error('[ROLE_PATCH]', error)
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ errors: error.errors }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
     return new NextResponse("Internal error", { status: 500 })
   }
 }
@@ -76,7 +82,7 @@ export async function DELETE(
       return new NextResponse("Role ID is required", { status: 400 })
     }
 
-    const org = await requireOrg(user.id)
+    const org = await requireOrg()
     
     // Validate that the role belongs to this org
     const existingRole = await prismadb.orgRole.findUnique({
@@ -100,6 +106,12 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[ROLE_DELETE]', error)
+    if (error instanceof z.ZodError) {
+      return new NextResponse(JSON.stringify({ errors: error.errors }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
     return new NextResponse("Internal error", { status: 500 })
   }
 }

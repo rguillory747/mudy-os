@@ -68,6 +68,15 @@ export async function POST(req: Request) {
       return new NextResponse('Title and input are required', { status: 400 })
     }
 
+    if (roleId) {
+      const role = await prismadb.orgRole.findFirst({
+        where: { id: roleId, orgId: org.id }
+      })
+      if (!role) {
+        return new NextResponse('Role not found', { status: 404 })
+      }
+    }
+
     const task = await prismadb.agentTask.create({
       data: {
         orgId: org.id,
