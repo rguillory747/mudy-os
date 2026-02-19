@@ -5,6 +5,8 @@ import { getCurrentOrg } from '@/lib/tenant'
 import { PLAN_CATALOG } from '@/lib/plans'
 import { PlanTier } from '@prisma/client'
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth()

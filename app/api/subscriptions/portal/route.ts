@@ -4,6 +4,8 @@ import { createPortalSession } from '@/lib/stripe'
 import { getCurrentOrg } from '@/lib/tenant'
 import { prismadb } from '@/lib/prismadb'
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth()
