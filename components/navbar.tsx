@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { UserButton } from "@clerk/nextjs"
 import { Poppins } from "next/font/google"
 import { Sparkles } from "lucide-react"
@@ -32,7 +33,7 @@ export const Navbar = ({ isPro }: NavbarProps) => {
                             font.className,
                         )}
                     >
-                        <img src={Logo.src} alt="logo" width={200} height={100} />
+                        <Image src={Logo} alt="AiORG logo" width={200} height={100} />
                     </h1>
                 </Link>
             </div>

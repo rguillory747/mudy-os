@@ -37,11 +37,12 @@ export function UsageAnalyticsCard() {
       let startDate: Date
 
       if (timeRange === 'today') {
-        startDate = new Date(now.setHours(0, 0, 0, 0))
+        startDate = new Date(now)
+        startDate.setHours(0, 0, 0, 0)
       } else if (timeRange === 'week') {
-        startDate = new Date(now.setDate(now.getDate() - 7))
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
       } else {
-        startDate = new Date(now.setDate(now.getDate() - 30))
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       }
 
       const params = new URLSearchParams({

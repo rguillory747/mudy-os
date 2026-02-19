@@ -2,7 +2,7 @@
 
 import qs from "query-string";
 import { Category } from "@prisma/client"
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
@@ -17,12 +17,13 @@ export const Categories = ({
   const searchParams = useSearchParams();
 
   const categoryId = searchParams.get("categoryId");
+  const pathname = usePathname();
 
   const onClick = (id: string | undefined) => {
     const query = { categoryId: id };
 
     const url = qs.stringifyUrl({
-      url: window.location.href,
+      url: pathname,
       query
     }, { skipNull: true });
 

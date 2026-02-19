@@ -170,7 +170,7 @@ export class UnifiedModelClient {
 
     const costPer1k = catalogEntry.costPer1kTokens
     const totalCost = ((inputTokens + outputTokens) / 1000) * costPer1k
-    return Math.ceil(totalCost * 100) // Convert to cents
+    return Math.round(totalCost * 100) // Convert to cents
   }
 }
 
