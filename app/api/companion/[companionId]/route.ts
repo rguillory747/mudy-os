@@ -41,7 +41,7 @@ export async function PATCH(
       data: {
         categoryId,
         userId: user.id,
-        userName: user.firstName,
+        userName: user.firstName || user.id,
         src,
         name,
         description,

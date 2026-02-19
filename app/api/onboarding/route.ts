@@ -3,18 +3,18 @@ import { NextResponse } from 'next/server'
 import prismadb from '@/lib/prismadb'
 import { requireOrg } from '@/lib/tenant'
 import { generateOrgChartProposal } from '@/lib/architect-agent'
-import { Role } from '@prisma/client'
+import { OrgRole } from '@prisma/client'
 
 interface OnboardingRequestBody {
   companyName: string
   industry: string
   companySize: string
-  description: string
+  description?: string
   useCases: string[]
-  budgetSensitivity: string
+  budgetSensitivity: 'low' | 'medium' | 'high'
   latencyPreference: string
   dataPrivacy: string
-  preferredProviders: string[]
+  preferredProviders?: string[]
 }
 
 export async function POST(req: Request) {
@@ -43,17 +43,11 @@ export async function POST(req: Request) {
     // Update organization with onboarding data
     await prismadb.organization.update({
       where: { id: org.id },
-      data: { 
-        industry, 
-        companySize, 
-        onboardingStatus: 'in_progress', 
-        name: companyName,
-        description,
-        useCases,
-        budgetSensitivity,
-        latencyPreference,
-        dataPrivacy,
-        preferredProviders
+      data: {
+        industry,
+        companySize,
+        onboardingStatus: 'in_progress',
+        name: companyName
       }
     })
 
@@ -61,7 +55,7 @@ export async function POST(req: Request) {
     const proposal = await generateOrgChartProposal(body)
 
     // Track created roles for parent lookup
-    const createdRoles = new Map<string, Role>()
+    const createdRoles = new Map<string, OrgRole>()
 
     // Create roles from proposal
     for (let index = 0; index < proposal.roles.length; index++) {
@@ -89,21 +83,23 @@ export async function POST(req: Request) {
       createdRoles.set(role.name, createdRole)
 
       // Handle model configuration
-      if (role.recommendedModel) {
+      if (role.recommendedModelId && role.recommendedProvider) {
         // Find or create ModelConfig
         let modelConfig = await prismadb.modelConfig.findFirst({
           where: {
-            provider: role.recommendedModel.provider,
-            model: role.recommendedModel.model
+            orgId: org.id,
+            provider: role.recommendedProvider as any,
+            modelId: role.recommendedModelId
           }
         })
 
         if (!modelConfig) {
           modelConfig = await prismadb.modelConfig.create({
             data: {
-              provider: role.recommendedModel.provider,
-              model: role.recommendedModel.model,
-              capabilities: role.recommendedModel.capabilities || []
+              orgId: org.id,
+              provider: role.recommendedProvider as any,
+              modelId: role.recommendedModelId,
+              displayName: role.recommendedModelId
             }
           })
         }
@@ -112,8 +108,7 @@ export async function POST(req: Request) {
         await prismadb.roleModelAssignment.create({
           data: {
             roleId: createdRole.id,
-            modelConfigId: modelConfig.id,
-            configuration: role.recommendedModel.configuration || {}
+            modelConfigId: modelConfig.id
           }
         })
       }

@@ -33,10 +33,7 @@ export async function generateOrgChartProposal(onboardingData: {
 }): Promise<OrgChartProposal> {
   try {
     // Filter models based on preferences
-    const availableModels = getRecommendedModels({
-      budgetSensitivity: onboardingData.budgetSensitivity,
-      preferredProviders: onboardingData.preferredProviders
-    })
+    const availableModels = getRecommendedModels(onboardingData.budgetSensitivity)
 
     // Create system prompt
     const systemPrompt = `
@@ -96,7 +93,7 @@ Design an optimal AI workforce org chart following the guidelines.
       apiKey: process.env.OPENAI_API_KEY,
       model: 'gpt-4o',
       temperature: 0.3,
-      responseFormat: { type: 'json_object' }
+      modelKwargs: { response_format: { type: 'json_object' } }
     })
 
     // Generate response
