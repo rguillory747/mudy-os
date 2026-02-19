@@ -5,6 +5,8 @@ import { stripe, stripeWebhookSecret } from '@/lib/stripe'
 import { prismadb } from '@/lib/prismadb'
 import { PlanTier } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   const body = await req.text()
   const headersList = await headers()
